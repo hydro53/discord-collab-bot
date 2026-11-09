@@ -1,0 +1,27 @@
+{
+  "name": "discord-collab-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for Web3/NFT collab management",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:prod": "node src/db/migrate.js && node src/index.js",
+    "migrate": "node src/db/migrate.js",
+    "deploy": "node src/deployCommands.js",
+    "clear": "node src/clearGuildCommands.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.0",
+    "csv-parse": "^5.5.6",
+    "csv-stringify": "^6.5.1"
+  },
+  "devDependencies": {},
+  "keywords": ["discord", "bot", "web3", "nft", "collab"],
+  "author": "",
+  "license": "ISC"
+}

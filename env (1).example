@@ -1,0 +1,17 @@
+# Never commit your real .env. This is a template.
+
+# Deployer wallet private key (used only to deploy the contract, one time).
+# Fund this wallet with a small amount of testnet/mainnet ETH for gas.
+DEPLOYER_PRIVATE_KEY=
+
+# Optional: override default public RPCs with your own (Chainstack/QuickNode/etc.)
+RH_TESTNET_RPC=https://rpc.testnet.chain.robinhood.com
+RH_MAINNET_RPC=https://rpc.mainnet.chain.robinhood.com
+
+# Collection config used by scripts/deploy.js
+COLLECTION_NAME=AgentZero
+COLLECTION_SYMBOL=AGENTZERO
+BASE_URI=ipfs://REPLACE_WITH_YOUR_CID/
+MAX_SUPPLY=10000
+MINT_PRICE_ETH=0.005
+MAX_PER_WALLET=5
