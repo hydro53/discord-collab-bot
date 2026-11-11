@@ -33,14 +33,51 @@ module.exports = {
     }
 
     try {
-      await pool.query(
+      const insert = await pool.query(
         `INSERT INTO collabs (requester_guild_id, target_guild_id, status)
          VALUES ($1, $2, 'pending')
-         ON CONFLICT (requester_guild_id, target_guild_id) DO NOTHING`,
+         ON CONFLICT (requester_guild_id, target_guild_id) DO NOTHING
+         RETURNING id`,
         [interaction.guildId, targetId]
       );
-      await interaction.editReply({ content: `Collab request sent to server ${targetId}.` });
-      // TODO: notify target via their requests channel
+
+      if (insert.rows.length === 0) {
+        return interaction.editReply({ content: 'A pending request already exists with this server.' });
+      }
+
+      const collabId = insert.rows[0].id;
+
+      // Notify target server
+      const channelRes = await pool.query(
+        `SELECT channel_id FROM guild_channels WHERE guild_id = $1 AND purpose = 'requests'`,
+        [targetId]
+      );
+      if (channelRes.rows.length > 0) {
+        const channelId = channelRes.rows[0].channel_id;
+        const channel = await interaction.client.channels.fetch(channelId).catch(() => null);
+        if (channel) {
+          const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+          const embed = new EmbedBuilder()
+            .setTitle(`New Collab Request #${collabId}`)
+            .setDescription(`From server: ${interaction.guild.name}\nID: ${interaction.guildId}`)
+            .setFooter({ text: 'Accept or Decline below' });
+
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId(`collabAccept:${collabId}`)
+              .setLabel('Accept')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId(`collabDecline:${collabId}`)
+              .setLabel('Decline')
+              .setStyle(ButtonStyle.Danger)
+          );
+
+          await channel.send({ embeds: [embed], components: [row] });
+        }
+      }
+
+      await interaction.editReply({ content: `Collab request #${collabId} sent.` });
     } catch (err) {
       console.error(err);
       await interaction.editReply({ content: 'Failed to create request.' });

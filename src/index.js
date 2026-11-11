@@ -76,11 +76,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   } catch (err) {
     console.error('Interaction error:', err);
-    const reply = { content: 'An error occurred while processing this interaction.', ephemeral: true };
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply(reply).catch(() => {});
-    } else {
-      await interaction.reply(reply).catch(() => {});
+    // Autocomplete cannot use reply/editReply
+    if (interaction.isAutocomplete()) return;
+
+    const reply = { content: 'An error occurred while processing this interaction.', flags: 64 };
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(reply);
+      } else if (interaction.isRepliable()) {
+        await interaction.reply(reply);
+      }
+    } catch (e) {
+      console.error('Failed to send error reply:', e.message);
     }
   }
 });
