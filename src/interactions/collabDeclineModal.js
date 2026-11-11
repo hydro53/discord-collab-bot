@@ -13,7 +13,7 @@ module.exports = {
       const res = await pool.query(
         `UPDATE collabs SET status = 'declined', reason = $2, updated_at = NOW()
          WHERE id = $1 AND status = 'pending'
-         RETURNING requester_guild_id, target_guild_id`,
+         RETURNING requester_guild_id, target_guild_id, request_message_id, request_channel_id`,
         [collabId, reason]
       );
 
@@ -21,13 +21,28 @@ module.exports = {
         return interaction.editReply({ content: 'This request is no longer pending.' });
       }
 
-      const { requester_guild_id, target_guild_id } = res.rows[0];
-      const msg = `Collab #${collabId} was declined${reason ? ': ' + reason : ''}.`;
+      const row = res.rows[0];
 
-      await notifyGuild(interaction.client, requester_guild_id, msg);
-      await notifyGuild(interaction.client, target_guild_id, msg);
+      // Edit original request message
+      if (row.request_channel_id && row.request_message_id) {
+        const channel = await interaction.client.channels.fetch(row.request_channel_id).catch(() => null);
+        if (channel) {
+          const msg = await channel.messages.fetch(row.request_message_id).catch(() => null);
+          if (msg) {
+            const embed = EmbedBuilder.from(msg.embeds[0] || {})
+              .setTitle('❌ COLLAB DECLINED')
+              .setColor(0xED4245)
+              .setDescription(reason ? `Reason: ${reason}` : 'Declined.')
+              .setFooter({ text: `Request #${collabId}` });
+            await msg.edit({ embeds: [embed], components: [] }).catch(() => {});
+          }
+        }
+      }
 
-      await interaction.editReply({ content: `Collab #${collabId} declined.` });
+      const msgRequester = `❌ **COLLAB REQUEST DECLINED**\n\nRequest **#${collabId}** was declined${reason ? `.\nReason: ${reason}` : '.'}`;
+      await notifyGuild(interaction.client, row.requester_guild_id, msgRequester);
+
+      await interaction.editReply({ content: `Collab #${collabId} declined. Community notified.` });
     }
   }
 };

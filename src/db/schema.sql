@@ -39,11 +39,33 @@ END $$;
 CREATE TABLE IF NOT EXISTS guilds (
   guild_id TEXT PRIMARY KEY,
   name TEXT,
+  server_type TEXT DEFAULT 'Both', -- Project, Community, Both
+  x_handle TEXT,
+  website TEXT,
+  discord_invite TEXT,
+  chains TEXT,
   visibility visibility DEFAULT 'public',
   accepting_collabs BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add columns if they don't exist (for existing DBs)
+DO $$ BEGIN
+  ALTER TABLE guilds ADD COLUMN IF NOT EXISTS server_type TEXT DEFAULT 'Both';
+  ALTER TABLE guilds ADD COLUMN IF NOT EXISTS x_handle TEXT;
+  ALTER TABLE guilds ADD COLUMN IF NOT EXISTS website TEXT;
+  ALTER TABLE guilds ADD COLUMN IF NOT EXISTS discord_invite TEXT;
+  ALTER TABLE guilds ADD COLUMN IF NOT EXISTS chains TEXT;
+EXCEPTION WHEN others THEN NULL;
+END $$;
+
+-- Store request message so we can edit it on accept/decline
+DO $$ BEGIN
+  ALTER TABLE collabs ADD COLUMN IF NOT EXISTS request_message_id TEXT;
+  ALTER TABLE collabs ADD COLUMN IF NOT EXISTS request_channel_id TEXT;
+EXCEPTION WHEN others THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS guild_roles (
   guild_id TEXT REFERENCES guilds(guild_id) ON DELETE CASCADE,
